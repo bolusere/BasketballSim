@@ -3,9 +3,11 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package my.basketballsim;
+package simulator;
 
 import static java.lang.Math.random;
+import players.Player;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
