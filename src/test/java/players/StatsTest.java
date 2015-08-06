@@ -15,10 +15,6 @@ public class StatsTest {
     assertThat(stats.toString(), is(equalTo("ayy")));
   }
 
-  private int countMatches(final String str, final String token) {
-    return str.length() - str.replace(token, "").length();
-  }
-
   @Before
   public void initializeStats() {
     stats = new Stats();
@@ -28,7 +24,8 @@ public class StatsTest {
   @Test
   public void resetClearsFields() {
     stats.reset();
-    assertThat("All fields were not 0", countMatches(stats.toString(), "0"),
-        is(11));
+    for (final StatsTypes type : StatsTypes.values()) {
+      assertThat("A field was not zero after reset", stats.get(type), is(0));
+    }
   }
 }
