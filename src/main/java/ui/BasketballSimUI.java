@@ -5,6 +5,9 @@
  */
 package ui;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import players.Player;
 import players.PlayerGen;
 import simulator.Simulator;
@@ -15,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.DefaultListModel;
@@ -26,10 +30,8 @@ import javax.swing.table.DefaultTableModel;
  * @author Achi Jones
  */
 public class BasketballSimUI extends javax.swing.JFrame {
+  private static final Logger LOG = LoggerFactory.getLogger(Team.class);
 
-  /**
-   *
-   */
   private static final long serialVersionUID = 1L;
 
   /**
@@ -53,18 +55,9 @@ public class BasketballSimUI extends javax.swing.JFrame {
           break;
         }
       }
-    } catch (final ClassNotFoundException ex) {
-      java.util.logging.Logger.getLogger(BasketballSimUI.class.getName()).log(
-          java.util.logging.Level.SEVERE, null, ex);
-    } catch (final InstantiationException ex) {
-      java.util.logging.Logger.getLogger(BasketballSimUI.class.getName()).log(
-          java.util.logging.Level.SEVERE, null, ex);
-    } catch (final IllegalAccessException ex) {
-      java.util.logging.Logger.getLogger(BasketballSimUI.class.getName()).log(
-          java.util.logging.Level.SEVERE, null, ex);
-    } catch (final javax.swing.UnsupportedLookAndFeelException ex) {
-      java.util.logging.Logger.getLogger(BasketballSimUI.class.getName()).log(
-          java.util.logging.Level.SEVERE, null, ex);
+    } catch (final ClassNotFoundException | InstantiationException
+        | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
+      LOG.error("Failed attempting to initialize Swing", ex);
     }
     // </editor-fold>
 
@@ -77,10 +70,10 @@ public class BasketballSimUI extends javax.swing.JFrame {
     });
   }
 
-  public ArrayList<Player> PlayerList;
-  public ArrayList<Player> MyTeamPlayerList;
+  public List<Player> allPlayers;
+  public List<Player> myTeamPlayers;
 
-  public ArrayList<Team> League;
+  public List<Team> teamsInLeague;
 
   // Variables declaration - do not modify//GEN-BEGIN:variables
   private javax.swing.JButton DraftPlayerButton;
@@ -114,9 +107,9 @@ public class BasketballSimUI extends javax.swing.JFrame {
    * Creates new form BasketballSimUI
    */
   public BasketballSimUI() {
-    PlayerList = new ArrayList<Player>();
-    MyTeamPlayerList = new ArrayList<Player>();
-    League = new ArrayList<Team>();
+    allPlayers = new ArrayList<Player>();
+    myTeamPlayers = new ArrayList<Player>();
+    teamsInLeague = new ArrayList<Team>();
     initComponents();
     DraftedList.setModel(new DefaultListModel());
     jListTeams.setModel(new DefaultListModel());
@@ -131,34 +124,36 @@ public class BasketballSimUI extends javax.swing.JFrame {
       boolean found_player = false;
       int search = 0;
       while (!found_player) {
-        if (PlayerList.get(search).name.equals(name)) {
+        if (allPlayers.get(search).name.equals(name)) {
           found_player = true;
         } else {
           search++;
         }
       }
-      final Player drafted_player = PlayerList.get(search);
-      MyTeamPlayerList.add(drafted_player);
-      final DefaultListModel model = (DefaultListModel) DraftedList.getModel();
+      final Player drafted_player = allPlayers.get(search);
+      myTeamPlayers.add(drafted_player);
+      @SuppressWarnings("unchecked")
+      final DefaultListModel<String> model = (DefaultListModel<String>) DraftedList
+      .getModel();
       model.addElement(drafted_player.name + " OVRL: "
-          + drafted_player.ratingsArray[1]);
-      PlayerList.remove(drafted_player);
+          + drafted_player.ratings[1]);
+      allPlayers.remove(drafted_player);
       final DefaultTableModel table_model = (DefaultTableModel) DraftTable
           .getModel();
       table_model.removeRow(row);
 
       // sort playerList before AI drafts
-      Collections.sort(PlayerList, new Comparator<Player>() {
+      Collections.sort(allPlayers, new Comparator<Player>() {
         @Override
         public int compare(Player p1, Player p2) {
-          return p1.ratingsArray[1] > p2.ratingsArray[1] ? -1
-              : p1.ratingsArray[1] < p2.ratingsArray[1] ? 1 : 0;
+          return p1.ratings[1] > p2.ratings[1] ? -1
+              : p1.ratings[1] < p2.ratings[1] ? 1 : 0;
         }
       });
 
       // make ai draft
-      for (int t = 0; t < League.size(); ++t) {
-        League.get(t).selectPlayer(PlayerList);
+      for (int t = 0; t < teamsInLeague.size(); ++t) {
+        teamsInLeague.get(t).selectPlayer(allPlayers);
       }
 
       // make table model remove all the drafted players
@@ -166,69 +161,69 @@ public class BasketballSimUI extends javax.swing.JFrame {
           .getModel();
       tabModel.setRowCount(0);
 
-      for (int p = 0; p < PlayerList.size(); ++p) {
-        final Player tmpPlayer = PlayerList.get(p);
-        final Vector playerVec = new Vector(14);
+      for (int p = 0; p < allPlayers.size(); ++p) {
+        final Player tmpPlayer = allPlayers.get(p);
+        final Vector<Object> playerVec = new Vector<Object>(14);
         playerVec.addElement(tmpPlayer.name);
         playerVec.addElement(tmpPlayer.attributes);
         for (int i = 0; i < 13; ++i) {
-          playerVec.addElement(tmpPlayer.ratingsArray[i]);
+          playerVec.addElement(tmpPlayer.ratings[i]);
         }
 
         tabModel.addRow(playerVec);
       }
 
-      if (MyTeamPlayerList.size() == 10) {
+      if (myTeamPlayers.size() == 10) {
         final Team playerTeam = new Team("PLAYER TEAM");
         // drafted all they need
         Object[] options = { "PG", "SG", "SF", "PF", "C", "Backup PG",
             "Backup SG", "Backup SF", "Backup PF", "Backup C" };
         for (int i = 0; i < 10; ++i) {
           final Object selectedValue = JOptionPane.showInputDialog(null,
-              "Where should " + MyTeamPlayerList.get(i).name + " be placed?",
+              "Where should " + myTeamPlayers.get(i).name + " be placed?",
               "Input", JOptionPane.INFORMATION_MESSAGE, null, options,
               options[0]);
-          final ArrayList<Object> tmpremove = new ArrayList<Object>(
+          final List<Object> tmpremove = new ArrayList<Object>(
               Arrays.asList(options));
           if (selectedValue == "PG") {
-            MyTeamPlayerList.get(i).ratingsArray[0] = 1;
+            myTeamPlayers.get(i).ratings[0] = 1;
             tmpremove.remove("PG");
           } else if (selectedValue == "SG") {
-            MyTeamPlayerList.get(i).ratingsArray[0] = 2;
+            myTeamPlayers.get(i).ratings[0] = 2;
             tmpremove.remove("SG");
           } else if (selectedValue == "SF") {
-            MyTeamPlayerList.get(i).ratingsArray[0] = 3;
+            myTeamPlayers.get(i).ratings[0] = 3;
             tmpremove.remove("SF");
           } else if (selectedValue == "PF") {
-            MyTeamPlayerList.get(i).ratingsArray[0] = 4;
+            myTeamPlayers.get(i).ratings[0] = 4;
             tmpremove.remove("PF");
           } else if (selectedValue == "C") {
-            MyTeamPlayerList.get(i).ratingsArray[0] = 5;
+            myTeamPlayers.get(i).ratings[0] = 5;
             tmpremove.remove("C");
           } else if (selectedValue == "Backup PG") {
-            MyTeamPlayerList.get(i).ratingsArray[0] = 1;
+            myTeamPlayers.get(i).ratings[0] = 1;
             tmpremove.remove("Backup PG");
           } else if (selectedValue == "Backup SG") {
-            MyTeamPlayerList.get(i).ratingsArray[0] = 2;
+            myTeamPlayers.get(i).ratings[0] = 2;
             tmpremove.remove("Backup SG");
           } else if (selectedValue == "Backup SF") {
-            MyTeamPlayerList.get(i).ratingsArray[0] = 3;
+            myTeamPlayers.get(i).ratings[0] = 3;
             tmpremove.remove("Backup SF");
           } else if (selectedValue == "Backup PF") {
-            MyTeamPlayerList.get(i).ratingsArray[0] = 4;
+            myTeamPlayers.get(i).ratings[0] = 4;
             tmpremove.remove("Backup PF");
           } else if (selectedValue == "Backup C") {
-            MyTeamPlayerList.get(i).ratingsArray[0] = 5;
+            myTeamPlayers.get(i).ratings[0] = 5;
             tmpremove.remove("Backup C");
           }
-          playerTeam.addPlayer(MyTeamPlayerList.get(i));
+          playerTeam.addPlayer(myTeamPlayers.get(i));
           options = tmpremove.toArray();
         }
 
         // add player team to league and simulate season
-        League.add(playerTeam);
+        teamsInLeague.add(playerTeam);
         final Simulator simmy = new Simulator();
-        simmy.playSeason(League);
+        simmy.playSeason(teamsInLeague);
         System.out.println("Done simming season, you got " + playerTeam.wins
             + " wins.");
         jFrameSeason.setBounds(0, 0, 1150, 500);
@@ -243,22 +238,11 @@ public class BasketballSimUI extends javax.swing.JFrame {
     draftPlayer();
   }// GEN-LAST:event_DraftPlayerButtonActionPerformed
 
-  /**
-   * 
-   * @param evt
-   */
   private void DraftTableMouseClicked(java.awt.event.MouseEvent evt) {// GEN-FIRST:event_DraftTableMouseClicked
-    // TODO add your handling code here:
     if (evt.getClickCount() == 2) {
       draftPlayer();
     }
   }// GEN-LAST:event_DraftTableMouseClicked
-
-  private void getPlayerList() { // reads from file and adds every player to
-                                 // global PlayerList
-    final PlayerGen genny = new PlayerGen();
-    PlayerList = genny.getPlayersFromFile();
-  }
 
   /**
    * This method is called from within the constructor to initialize the form.
@@ -272,7 +256,7 @@ public class BasketballSimUI extends javax.swing.JFrame {
 
     jFrameSeason = new javax.swing.JFrame();
     jScrollPane2 = new javax.swing.JScrollPane();
-    jListTeams = new javax.swing.JList();
+    jListTeams = new javax.swing.JList<Object>();
     jLabelSeasonResults = new javax.swing.JLabel();
     jScrollPane3 = new javax.swing.JScrollPane();
     jTableTeamPlayerStats = new javax.swing.JTable();
@@ -285,11 +269,12 @@ public class BasketballSimUI extends javax.swing.JFrame {
     DraftPlayerButton = new javax.swing.JButton();
     jLabel1 = new javax.swing.JLabel();
     jScrollPane1 = new javax.swing.JScrollPane();
-    DraftedList = new javax.swing.JList();
+    DraftedList = new javax.swing.JList<Object>();
 
     jFrameSeason.setMinimumSize(new java.awt.Dimension(1100, 500));
 
-    jListTeams.setModel(new javax.swing.AbstractListModel() {
+    jListTeams.setModel(new javax.swing.AbstractListModel<Object>() {
+      private static final long serialVersionUID = 1L;
       String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
 
       @Override
@@ -303,17 +288,17 @@ public class BasketballSimUI extends javax.swing.JFrame {
       }
     });
     jListTeams
-        .setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+    .setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
     jListTeams.setToolTipText("");
     jListTeams.setMaximumSize(new java.awt.Dimension(60, 100));
     jListTeams.setMinimumSize(new java.awt.Dimension(60, 100));
     jListTeams.setPreferredSize(new java.awt.Dimension(60, 100));
     jListTeams
-        .addListSelectionListener(new javax.swing.event.ListSelectionListener() {
-          @Override
-          public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
-            jListTeamsValueChanged(evt);
-          }
+    .addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+      @Override
+      public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
+        jListTeamsValueChanged(evt);
+      }
     });
     jScrollPane2.setViewportView(jListTeams);
 
@@ -322,26 +307,31 @@ public class BasketballSimUI extends javax.swing.JFrame {
     jTableTeamPlayerStats.setModel(new javax.swing.table.DefaultTableModel(
         new Object[][] {
             { null, null, null, null, null, null, null, null, null, null, null,
+              null, null },
+              { null, null, null, null, null, null, null, null, null, null, null,
                 null, null },
-            { null, null, null, null, null, null, null, null, null, null, null,
-                null, null },
-            { null, null, null, null, null, null, null, null, null, null, null,
-                null, null },
-            { null, null, null, null, null, null, null, null, null, null, null,
-                null, null } }, new String[] { "Name", "POS", "PPG", "FG%",
+                { null, null, null, null, null, null, null, null, null, null, null,
+                  null, null },
+                  { null, null, null, null, null, null, null, null, null, null, null,
+                    null, null } }, new String[] { "Name", "POS", "PPG", "FG%",
             "3G%", "REB", "ASS", "STL", "BLK", "FGA", "3PA", "OFG%", "MSM" }) {
+      /**
+       *
+       */
+      private static final long serialVersionUID = 1L;
+      @SuppressWarnings("rawtypes")
       Class[] types = new Class[] { java.lang.String.class,
-          java.lang.String.class, java.lang.String.class,
-          java.lang.String.class, java.lang.String.class,
-          java.lang.String.class, java.lang.String.class,
-          java.lang.String.class, java.lang.String.class,
-          java.lang.String.class, java.lang.String.class,
-          java.lang.String.class, java.lang.String.class };
+        java.lang.String.class, java.lang.String.class,
+        java.lang.String.class, java.lang.String.class,
+        java.lang.String.class, java.lang.String.class,
+        java.lang.String.class, java.lang.String.class,
+        java.lang.String.class, java.lang.String.class,
+        java.lang.String.class, java.lang.String.class };
       boolean[] canEdit = new boolean[] { false, false, false, false, false,
           false, false, false, false, false, false, false, false };
 
       @Override
-      public Class getColumnClass(int columnIndex) {
+      public Class<?> getColumnClass(int columnIndex) {
         return types[columnIndex];
       }
 
@@ -354,22 +344,22 @@ public class BasketballSimUI extends javax.swing.JFrame {
     jTableTeamPlayerStats.getTableHeader().setReorderingAllowed(false);
     jScrollPane3.setViewportView(jTableTeamPlayerStats);
     jTableTeamPlayerStats
-        .getColumnModel()
-        .getSelectionModel()
-        .setSelectionMode(
-            javax.swing.ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+    .getColumnModel()
+    .getSelectionModel()
+    .setSelectionMode(
+        javax.swing.ListSelectionModel.SINGLE_INTERVAL_SELECTION);
     if (jTableTeamPlayerStats.getColumnModel().getColumnCount() > 0) {
       jTableTeamPlayerStats.getColumnModel().getColumn(0).setResizable(false);
       jTableTeamPlayerStats.getColumnModel().getColumn(0)
-          .setPreferredWidth(300);
+      .setPreferredWidth(300);
       jTableTeamPlayerStats.getColumnModel().getColumn(1).setResizable(false);
       jTableTeamPlayerStats.getColumnModel().getColumn(2).setResizable(false);
       jTableTeamPlayerStats.getColumnModel().getColumn(3).setResizable(false);
       jTableTeamPlayerStats.getColumnModel().getColumn(3)
-          .setPreferredWidth(100);
+      .setPreferredWidth(100);
       jTableTeamPlayerStats.getColumnModel().getColumn(4).setResizable(false);
       jTableTeamPlayerStats.getColumnModel().getColumn(4)
-          .setPreferredWidth(100);
+      .setPreferredWidth(100);
       jTableTeamPlayerStats.getColumnModel().getColumn(5).setResizable(false);
       jTableTeamPlayerStats.getColumnModel().getColumn(6).setResizable(false);
       jTableTeamPlayerStats.getColumnModel().getColumn(7).setResizable(false);
@@ -378,7 +368,7 @@ public class BasketballSimUI extends javax.swing.JFrame {
       jTableTeamPlayerStats.getColumnModel().getColumn(10).setResizable(false);
       jTableTeamPlayerStats.getColumnModel().getColumn(11).setResizable(false);
       jTableTeamPlayerStats.getColumnModel().getColumn(11)
-          .setPreferredWidth(100);
+      .setPreferredWidth(100);
       jTableTeamPlayerStats.getColumnModel().getColumn(12).setResizable(false);
     }
 
@@ -389,19 +379,21 @@ public class BasketballSimUI extends javax.swing.JFrame {
 
         }, new String[] { "Name", "POSN", "OVRL", "INTS", "MIDS", "OUTS",
             "PASS", "HAND", "STL", "BLCK", "INTD", "OUTD", "REBD", "USAG" }) {
+      private static final long serialVersionUID = 1L;
+      @SuppressWarnings("rawtypes")
       Class[] types = new Class[] { java.lang.String.class,
-          java.lang.Integer.class, java.lang.Integer.class,
-          java.lang.Integer.class, java.lang.Integer.class,
-          java.lang.Integer.class, java.lang.Integer.class,
-          java.lang.Integer.class, java.lang.Integer.class,
-          java.lang.Integer.class, java.lang.Integer.class,
-          java.lang.Integer.class, java.lang.Integer.class,
-          java.lang.Integer.class };
+        java.lang.Integer.class, java.lang.Integer.class,
+        java.lang.Integer.class, java.lang.Integer.class,
+        java.lang.Integer.class, java.lang.Integer.class,
+        java.lang.Integer.class, java.lang.Integer.class,
+        java.lang.Integer.class, java.lang.Integer.class,
+        java.lang.Integer.class, java.lang.Integer.class,
+        java.lang.Integer.class };
       boolean[] canEdit = new boolean[] { false, false, false, false, false,
           false, false, false, false, false, false, false, false, false };
 
       @Override
-      public Class getColumnClass(int columnIndex) {
+      public Class<?> getColumnClass(int columnIndex) {
         return types[columnIndex];
       }
 
@@ -413,10 +405,10 @@ public class BasketballSimUI extends javax.swing.JFrame {
     jTableTeamRatings.getTableHeader().setReorderingAllowed(false);
     jScrollPane6.setViewportView(jTableTeamRatings);
     jTableTeamRatings
-        .getColumnModel()
-        .getSelectionModel()
-        .setSelectionMode(
-            javax.swing.ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+    .getColumnModel()
+    .getSelectionModel()
+    .setSelectionMode(
+        javax.swing.ListSelectionModel.SINGLE_INTERVAL_SELECTION);
     if (jTableTeamRatings.getColumnModel().getColumnCount() > 0) {
       jTableTeamRatings.getColumnModel().getColumn(0).setResizable(false);
       jTableTeamRatings.getColumnModel().getColumn(0).setPreferredWidth(300);
@@ -439,75 +431,75 @@ public class BasketballSimUI extends javax.swing.JFrame {
         jFrameSeason.getContentPane());
     jFrameSeason.getContentPane().setLayout(jFrameSeasonLayout);
     jFrameSeasonLayout
-        .setHorizontalGroup(jFrameSeasonLayout
-            .createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+    .setHorizontalGroup(jFrameSeasonLayout
+        .createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
         .addGroup(
+            jFrameSeasonLayout
+            .createSequentialGroup()
+            .addContainerGap()
+            .addGroup(
                 jFrameSeasonLayout
-                    .createSequentialGroup()
-                    .addContainerGap()
+                .createParallelGroup(
+                    javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(
                         jFrameSeasonLayout
-                            .createParallelGroup(
-                                javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(
-                                jFrameSeasonLayout
-                                    .createSequentialGroup()
-                                    .addComponent(jScrollPane2,
-                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-                                        164,
-                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addPreferredGap(
-                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addGroup(
-                                        jFrameSeasonLayout
-                                            .createParallelGroup(
-                                                javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addComponent(
-                                                jScrollPane3,
-                                                javax.swing.GroupLayout.DEFAULT_SIZE,
-                                                969, Short.MAX_VALUE)
+                        .createSequentialGroup()
+                        .addComponent(jScrollPane2,
+                            javax.swing.GroupLayout.PREFERRED_SIZE,
+                            164,
+                            javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addPreferredGap(
+                                javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(
+                                    jFrameSeasonLayout
+                                    .createParallelGroup(
+                                        javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(
+                                            jScrollPane3,
+                                            javax.swing.GroupLayout.DEFAULT_SIZE,
+                                            969, Short.MAX_VALUE)
                                             .addGroup(
                                                 jFrameSeasonLayout
-                                                    .createSequentialGroup()
-                                                    .addComponent(
-                                                        jLabelTeamName)
+                                                .createSequentialGroup()
+                                                .addComponent(
+                                                    jLabelTeamName)
                                                     .addGap(0, 0,
                                                         Short.MAX_VALUE))
-                                            .addComponent(jScrollPane6)))
-                            .addComponent(jLabelSeasonResults))
-                    .addContainerGap()));
+                                                        .addComponent(jScrollPane6)))
+                                                        .addComponent(jLabelSeasonResults))
+                                                        .addContainerGap()));
     jFrameSeasonLayout
-        .setVerticalGroup(jFrameSeasonLayout
-            .createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+    .setVerticalGroup(jFrameSeasonLayout
+        .createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
         .addGroup(
+            jFrameSeasonLayout
+            .createSequentialGroup()
+            .addContainerGap()
+            .addComponent(jLabelSeasonResults)
+            .addGap(5, 5, 5)
+            .addGroup(
                 jFrameSeasonLayout
-                    .createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jLabelSeasonResults)
-                    .addGap(5, 5, 5)
+                .createParallelGroup(
+                    javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane2)
                     .addGroup(
                         jFrameSeasonLayout
-                            .createParallelGroup(
-                                javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jScrollPane2)
-                            .addGroup(
-                                jFrameSeasonLayout
-                                    .createSequentialGroup()
-                                    .addComponent(jLabelTeamName)
-                                    .addPreferredGap(
-                                        javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                    .addComponent(jScrollPane3,
-                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-                                        250,
-                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addPreferredGap(
-                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .createSequentialGroup()
+                        .addComponent(jLabelTeamName)
+                        .addPreferredGap(
+                            javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                            .addComponent(jScrollPane3,
+                                javax.swing.GroupLayout.PREFERRED_SIZE,
+                                250,
+                                javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(
+                                    javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                     .addComponent(jScrollPane6,
                                         javax.swing.GroupLayout.PREFERRED_SIZE,
                                         268,
                                         javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addGap(0, 8, Short.MAX_VALUE)))
-                    .addContainerGap()));
+                                        .addGap(0, 8, Short.MAX_VALUE)))
+                                        .addContainerGap()));
 
     setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -515,19 +507,21 @@ public class BasketballSimUI extends javax.swing.JFrame {
 
     }, new String[] { "Name", "Skills", "POSN", "OVRL", "INTS", "MIDS", "OUTS",
         "PASS", "HAND", "STL", "BLCK", "INTD", "OUTD", "REBD", "USAG" }) {
+      private static final long serialVersionUID = 1L;
+      @SuppressWarnings("rawtypes")
       Class[] types = new Class[] { java.lang.String.class,
-          java.lang.String.class, java.lang.Integer.class,
-          java.lang.Integer.class, java.lang.Integer.class,
-          java.lang.Integer.class, java.lang.Integer.class,
-          java.lang.Integer.class, java.lang.Integer.class,
-          java.lang.Integer.class, java.lang.Integer.class,
-          java.lang.Integer.class, java.lang.Integer.class,
-          java.lang.Integer.class, java.lang.Integer.class };
+        java.lang.String.class, java.lang.Integer.class,
+        java.lang.Integer.class, java.lang.Integer.class,
+        java.lang.Integer.class, java.lang.Integer.class,
+        java.lang.Integer.class, java.lang.Integer.class,
+        java.lang.Integer.class, java.lang.Integer.class,
+        java.lang.Integer.class, java.lang.Integer.class,
+        java.lang.Integer.class, java.lang.Integer.class };
       boolean[] canEdit = new boolean[] { false, false, false, false, false,
           false, false, false, false, false, false, false, false, false, false };
 
       @Override
-      public Class getColumnClass(int columnIndex) {
+      public Class<?> getColumnClass(int columnIndex) {
         return types[columnIndex];
       }
 
@@ -546,10 +540,10 @@ public class BasketballSimUI extends javax.swing.JFrame {
     });
     jScrollPane5.setViewportView(DraftTable);
     DraftTable
-        .getColumnModel()
-        .getSelectionModel()
-        .setSelectionMode(
-            javax.swing.ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+    .getColumnModel()
+    .getSelectionModel()
+    .setSelectionMode(
+        javax.swing.ListSelectionModel.SINGLE_INTERVAL_SELECTION);
     if (DraftTable.getColumnModel().getColumnCount() > 0) {
       DraftTable.getColumnModel().getColumn(0).setResizable(false);
       DraftTable.getColumnModel().getColumn(0).setPreferredWidth(300);
@@ -588,7 +582,8 @@ public class BasketballSimUI extends javax.swing.JFrame {
 
     jLabel1.setText("Current Team:");
 
-    DraftedList.setModel(new javax.swing.AbstractListModel() {
+    DraftedList.setModel(new javax.swing.AbstractListModel<Object>() {
+      private static final long serialVersionUID = 1L;
       String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
 
       @Override
@@ -607,85 +602,85 @@ public class BasketballSimUI extends javax.swing.JFrame {
         getContentPane());
     getContentPane().setLayout(layout);
     layout
-        .setHorizontalGroup(layout
-            .createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+    .setHorizontalGroup(layout
+        .createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
         .addGroup(
+            layout
+            .createSequentialGroup()
+            .addContainerGap()
+            .addGroup(
                 layout
-                    .createSequentialGroup()
-                    .addContainerGap()
+                .createParallelGroup(
+                    javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(
                         layout
-                            .createParallelGroup(
-                                javax.swing.GroupLayout.Alignment.LEADING)
+                        .createSequentialGroup()
+                        .addComponent(StartDraftButton,
+                            javax.swing.GroupLayout.PREFERRED_SIZE,
+                            98,
+                            javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGap(0, 0, Short.MAX_VALUE))
                             .addGroup(
                                 layout
-                                    .createSequentialGroup()
-                                    .addComponent(StartDraftButton,
-                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-                                        98,
-                                        javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addGap(0, 0, Short.MAX_VALUE))
-                            .addGroup(
-                                layout
-                                    .createSequentialGroup()
-                                    .addComponent(jScrollPane5,
-                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-                                        979,
-                                        javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .createSequentialGroup()
+                                .addComponent(jScrollPane5,
+                                    javax.swing.GroupLayout.PREFERRED_SIZE,
+                                    979,
+                                    javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addPreferredGap(
                                         javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                    .addGroup(
-                                        layout
+                                        .addGroup(
+                                            layout
                                             .createParallelGroup(
                                                 javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addComponent(
-                                                DraftPlayerButton,
-                                                javax.swing.GroupLayout.DEFAULT_SIZE,
-                                                199, Short.MAX_VALUE)
-                                            .addGroup(
-                                                layout
-                                                    .createSequentialGroup()
-                                                    .addComponent(jLabel1)
-                                                    .addGap(0, 0,
-                                                        Short.MAX_VALUE))
-                                            .addComponent(jScrollPane1))))
-                    .addContainerGap()));
+                                                .addComponent(
+                                                    DraftPlayerButton,
+                                                    javax.swing.GroupLayout.DEFAULT_SIZE,
+                                                    199, Short.MAX_VALUE)
+                                                    .addGroup(
+                                                        layout
+                                                        .createSequentialGroup()
+                                                        .addComponent(jLabel1)
+                                                        .addGap(0, 0,
+                                                            Short.MAX_VALUE))
+                                                            .addComponent(jScrollPane1))))
+                                                            .addContainerGap()));
     layout
-        .setVerticalGroup(layout
-            .createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+    .setVerticalGroup(layout
+        .createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
         .addGroup(
-                layout
-                    .createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(StartDraftButton,
-                        javax.swing.GroupLayout.PREFERRED_SIZE, 29,
-                        javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addPreferredGap(
-                        javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+            layout
+            .createSequentialGroup()
+            .addContainerGap()
+            .addComponent(StartDraftButton,
+                javax.swing.GroupLayout.PREFERRED_SIZE, 29,
+                javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(
+                    javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                     .addGroup(
                         layout
-                            .createParallelGroup(
-                                javax.swing.GroupLayout.Alignment.LEADING)
+                        .createParallelGroup(
+                            javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(
                                 layout
-                                    .createSequentialGroup()
-                                    .addComponent(DraftPlayerButton,
-                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-                                        37,
-                                        javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .createSequentialGroup()
+                                .addComponent(DraftPlayerButton,
+                                    javax.swing.GroupLayout.PREFERRED_SIZE,
+                                    37,
+                                    javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addPreferredGap(
                                         javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                    .addComponent(jLabel1)
-                                    .addPreferredGap(
-                                        javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addComponent(jScrollPane1,
-                                        javax.swing.GroupLayout.PREFERRED_SIZE,
-                                        259,
-                                        javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addComponent(jScrollPane5,
-                                javax.swing.GroupLayout.PREFERRED_SIZE, 470,
-                                javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addContainerGap(104, Short.MAX_VALUE)));
+                                        .addComponent(jLabel1)
+                                        .addPreferredGap(
+                                            javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                            .addComponent(jScrollPane1,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE,
+                                                259,
+                                                javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                .addComponent(jScrollPane5,
+                                                    javax.swing.GroupLayout.PREFERRED_SIZE, 470,
+                                                    javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                    .addContainerGap(104, Short.MAX_VALUE)));
 
     pack();
   }// </editor-fold>//GEN-END:initComponents
@@ -699,54 +694,54 @@ public class BasketballSimUI extends javax.swing.JFrame {
           .getModel();
       tabModel.setRowCount(0);
       for (int r = 0; r < 10; ++r) {
-        final Player p = League.get(tnum).playersArray[r];
-        final Vector playerVec = new Vector(13);
-        playerVec.addElement(p.name);
-        playerVec.addElement(p.getPosition());
-        playerVec.addElement(p.getPPG());
-        playerVec.addElement(p.getFGP() + "%");
-        playerVec.addElement(p.get3GP() + "%");
-        playerVec.addElement(p.getRPG());
-        playerVec.addElement(p.getAPG());
-        playerVec.addElement(p.getSPG());
-        playerVec.addElement(p.getBPG());
-        playerVec.addElement(p.getFGAPG());
-        playerVec.addElement(p.get3GAPG());
-        playerVec.addElement(p.getOFP() + "%");
-        playerVec.addElement(p.getMSM());
+        final Player p = teamsInLeague.get(tnum).playersInTeam[r];
+        final Vector<Object> playerVec = new Vector<Object>(13);
+        playerVec.add(p.name);
+        playerVec.add(p.getPosition());
+        playerVec.add(p.getPPG());
+        playerVec.add(p.getFGP() + "%");
+        playerVec.add(p.get3GP() + "%");
+        playerVec.add(p.getRPG());
+        playerVec.add(p.getAPG());
+        playerVec.add(p.getSPG());
+        playerVec.add(p.getBPG());
+        playerVec.add(p.getFGAPG());
+        playerVec.add(p.get3GAPG());
+        playerVec.add(p.getOFP() + "%");
+        playerVec.add(p.getMSM());
 
         tabModel.addRow(playerVec);
         if (r == 4) {
-          final Vector bVec = new Vector(13);
-          bVec.addElement("BENCH:");
+          final Vector<String> bVec = new Vector<String>(1);
+          bVec.add("BENCH:");
           tabModel.addRow(bVec);
         }
       }
-      final Team t = League.get(tnum);
-      final Vector teamVec = new Vector(13);
-      teamVec.addElement("TOTALS:");
-      teamVec.addElement(" ");
-      teamVec.addElement(t.getPPG());
-      teamVec.addElement(t.getFGP() + "%");
-      teamVec.addElement(t.get3GP() + "%");
-      teamVec.addElement(t.getRPG());
-      teamVec.addElement(t.getAPG());
-      teamVec.addElement(t.getSPG());
-      teamVec.addElement(t.getBPG());
-      teamVec.addElement(t.getFGAPG());
-      teamVec.addElement(t.get3GAPG());
-      teamVec.addElement(t.getOFP() + "%");
-      tabModel.addRow(teamVec);
+      final Team t = teamsInLeague.get(tnum);
+      final Vector<Object> teamCharacteristics = new Vector<Object>(13);
+      teamCharacteristics.add("TOTALS:");
+      teamCharacteristics.add(" ");
+      teamCharacteristics.add(t.getPPG());
+      teamCharacteristics.add(t.getFGP() + "%");
+      teamCharacteristics.add(t.get3GP() + "%");
+      teamCharacteristics.add(t.getRPG());
+      teamCharacteristics.add(t.getAPG());
+      teamCharacteristics.add(t.getSPG());
+      teamCharacteristics.add(t.getBPG());
+      teamCharacteristics.add(t.getFGAPG());
+      teamCharacteristics.add(t.get3GAPG());
+      teamCharacteristics.add(t.getOFP() + "%");
+      tabModel.addRow(teamCharacteristics);
 
       // add ratings to table
       final DefaultTableModel ratingsModel = (DefaultTableModel) jTableTeamRatings
           .getModel();
       ratingsModel.setRowCount(0);
       for (int p = 0; p < 10; ++p) {
-        final Vector playerVec = new Vector(13);
-        playerVec.addElement(t.playersArray[p].name);
+        final Vector<Object> playerVec = new Vector<Object>(14);
+        playerVec.addElement(t.playersInTeam[p].name);
         for (int i = 0; i < 13; ++i) {
-          playerVec.addElement(t.playersArray[p].ratingsArray[i]);
+          playerVec.add(t.playersInTeam[p].ratings[i]);
         }
         ratingsModel.addRow(playerVec);
       }
@@ -761,69 +756,57 @@ public class BasketballSimUI extends javax.swing.JFrame {
 
   private void reviewSeason() {
     // sort league by wins before inserting into list
-    Collections.sort(League, new Comparator<Team>() {
+    Collections.sort(teamsInLeague, new Comparator<Team>() {
       @Override
       public int compare(Team t1, Team t2) {
         return t1.wins > t2.wins ? -1 : t1.wins < t2.wins ? 1 : 0;
       }
     });
 
-    final DefaultListModel teamListmodel = (DefaultListModel) jListTeams
-        .getModel();
-    for (int i = 0; i < League.size(); i++) {
-      teamListmodel.addElement(League.get(i).name + ": "
-          + League.get(i).getWins82() + " - " + League.get(i).getLosses82());
+    @SuppressWarnings("unchecked")
+    final DefaultListModel<String> teamListmodel = (DefaultListModel<String>) jListTeams
+    .getModel();
+    for (int i = 0; i < teamsInLeague.size(); i++) {
+      teamListmodel.addElement(teamsInLeague.get(i).name + ": "
+          + teamsInLeague.get(i).getWins82() + " - "
+          + teamsInLeague.get(i).getLosses82());
     }
   }
 
   private void StartDraftButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_StartDraftButtonActionPerformed
-    // add 15 ai opponent teams
-    /*
-     * getPlayerList(); String[] teamNames =
-     * {"ATL","BOS","BKN","CHA","CHI","CLE","DAL","DEN","DET","GSW",
-     * "HOU","IND","LAC","LAL","MEM","MIA","MIL","MIN","NOL","NYK",
-     * "OKC","ORL","PHI","PHX","POR","SAC","SAN","TOR","UTA","WSH"};
-     * 
-     * for (int i = 0; i < 30; ++i) { Player[] startingPlayers = new Player[5];
-     * for (int p = 0; p < 5; ++p) { startingPlayers[p] = PlayerList.get(i*5 +
-     * p); } Team t = new Team( teamNames[i], startingPlayers ); League.add(t);
-     * } Simulator simmy = new Simulator(); simmy.playSeason(League);
-     * jFrameSeason.setBounds(0, 0, 800, 400); jFrameSeason.setVisible(true);
-     * reviewSeason();
-     */
-    League.add(new Team("Kold Killas"));
-    League.add(new Team("Super Troopers"));
-    League.add(new Team("Cool Cats"));
-    League.add(new Team("Diamond Stones"));
-    League.add(new Team("Army Armadillos"));
-    League.add(new Team("Ferguson Rioters"));
-    League.add(new Team("Silicon iPlayers"));
-    League.add(new Team("Swaggy Peas"));
-    League.add(new Team("Black Whites"));
-    League.add(new Team("Ballin Ballers"));
-    League.add(new Team("Paint Buckets"));
-    League.add(new Team("NYC Bankers"));
-    League.add(new Team("Senile Senators"));
-    League.add(new Team("Free Throwers"));
-    League.add(new Team("The Prancers"));
+    teamsInLeague.add(new Team("Kold Killas"));
+    teamsInLeague.add(new Team("Super Troopers"));
+    teamsInLeague.add(new Team("Cool Cats"));
+    teamsInLeague.add(new Team("Diamond Stones"));
+    teamsInLeague.add(new Team("Army Armadillos"));
+    teamsInLeague.add(new Team("Ferguson Rioters"));
+    teamsInLeague.add(new Team("Silicon iPlayers"));
+    teamsInLeague.add(new Team("Swaggy Peas"));
+    teamsInLeague.add(new Team("Black Whites"));
+    teamsInLeague.add(new Team("Ballin Ballers"));
+    teamsInLeague.add(new Team("Paint Buckets"));
+    teamsInLeague.add(new Team("NYC Bankers"));
+    teamsInLeague.add(new Team("Senile Senators"));
+    teamsInLeague.add(new Team("Free Throwers"));
+    teamsInLeague.add(new Team("The Prancers"));
 
     // Starts the Draft, reads file and makes players
     final PlayerGen genny = new PlayerGen();
-    PlayerList = genny.genRandPlayers(250);
+    allPlayers = genny.genRandPlayers(250);
     final DefaultTableModel model = (DefaultTableModel) DraftTable.getModel();
-    for (int p = 0; p < PlayerList.size(); ++p) {
-      final Vector playerVec = new Vector(14);
-      playerVec.addElement(PlayerList.get(p).name);
-      playerVec.addElement(PlayerList.get(p).attributes);
-      for (int i = 0; i < 13; ++i) {
-        playerVec.addElement(PlayerList.get(p).ratingsArray[i]);
+    for (int i = 0; i < allPlayers.size(); ++i) {
+      final Vector<Object> playerCharacteristics = new Vector<Object>(14);
+      playerCharacteristics.add(allPlayers.get(i).name);
+      playerCharacteristics.add(allPlayers.get(i).attributes);
+      for (int j = 0; j < 13; ++j) {
+        playerCharacteristics.add(allPlayers.get(i).ratings[j]);
       }
-      model.addRow(playerVec);
+      model.addRow(playerCharacteristics);
     }
 
     DraftTable.setAutoCreateRowSorter(true);
 
     StartDraftButton.setEnabled(false);
+  }
 
-  }// GEN-LAST:event_StartDraftButtonActionPerformed
 }
