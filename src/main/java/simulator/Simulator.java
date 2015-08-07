@@ -9,6 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import player.Player;
+import player.Position;
+import player.RatingsType;
+import player.StatsType;
 
 import java.util.List;
 
@@ -21,14 +24,18 @@ public class Simulator {
   private static final Logger LOG = LoggerFactory.getLogger(Simulator.class);
 
   private int calcMismatch(Player shooter, Player defender) {
-    final double intMis = (2 * shooter.getIntS() - defender.getIntD())
-        * shooter.getInsT();
-    final double midMis = (2 * shooter.getMidS() - (float) (defender.getIntD() + defender
-        .getOutD())) * shooter.getMidT();
-    final double outMis = (2 * shooter.getOutS() - defender.getOutD())
-        * shooter.getOutT();
-    return (int) (Math
-        .pow(shooter.getUsage() * (intMis + midMis + outMis), 1.3) / 100);
+    final double intMis = (2 * shooter.getRating(RatingsType.INTERIOR_SHOOTING) - defender
+        .getRating(RatingsType.INTERIOR_DEFENSE))
+        * transformRating(shooter.getRating(RatingsType.INSIDE_T));
+    final double midMis = (2 * shooter.getRating(RatingsType.MID_SHOOTING) - (float) (defender
+        .getRating(RatingsType.INTERIOR_DEFENSE) + defender
+        .getRating(RatingsType.OUTSIDE_DEFENSE)))
+        * transformRating(shooter.getRating(RatingsType.MID_T));
+    final double outMis = (2 * shooter.getRating(RatingsType.OUTSIDE_SHOOTING) - defender
+        .getRating(RatingsType.OUTSIDE_DEFENSE))
+        * transformRating(shooter.getRating(RatingsType.OUTSIDE_T));
+    return (int) (Math.pow(shooter.getRating(RatingsType.USAGE)
+        * (intMis + midMis + outMis), 1.3) / 100);
   }
 
   private int[] detectMismatch(Team offense, Team defense) {
@@ -41,34 +48,50 @@ public class Simulator {
   }
 
   public Player findRebounder(Team t) {
-    final double cnReb = t.getC().getReboundRating() * Math.random();
-    final double pfReb = t.getPF().getReboundRating() * Math.random();
-    final double sfReb = t.getSF().getReboundRating() * Math.random();
-    final double sgReb = t.getSG().getReboundRating() * Math.random();
-    final double pgReb = t.getPG().getReboundRating() * Math.random();
+    final double cnReb = t.getPlayer(Position.CENTER).getRating(
+        RatingsType.REBOUNDING)
+        * Math.random();
+    final double pfReb = t.getPlayer(Position.POWER_FORWARD).getRating(
+        RatingsType.REBOUNDING)
+        * Math.random();
+    final double sfReb = t.getPlayer(Position.SMALL_FORWARD).getRating(
+        RatingsType.REBOUNDING)
+        * Math.random();
+    final double sgReb = t.getPlayer(Position.SHOOTING_GUARD).getRating(
+        RatingsType.REBOUNDING)
+        * Math.random();
+    final double pgReb = t.getPlayer(Position.POINT_GUARD).getRating(
+        RatingsType.REBOUNDING)
+        * Math.random();
     if (pgReb > pfReb && pgReb > sfReb && pgReb > sgReb && pgReb > cnReb) {
-      return t.getPG();
+      return t.getPlayer(Position.POINT_GUARD);
     } else if (sgReb > cnReb && sgReb > pfReb && sgReb > sfReb && sfReb > pgReb) {
-      return t.getSG();
+      return t.getPlayer(Position.SHOOTING_GUARD);
     } else if (sfReb > cnReb && sfReb > pfReb && sfReb > sgReb && sfReb > pgReb) {
-      return t.getSF();
+      return t.getPlayer(Position.SMALL_FORWARD);
     } else if (pfReb > cnReb && pfReb > sfReb && pfReb > sgReb && pfReb > pgReb) {
-      return t.getPF();
+      return t.getPlayer(Position.POWER_FORWARD);
     } else {
-      return t.getC();
+      return t.getPlayer(Position.CENTER);
     }
   }
 
   public Player getBallCarrier(Team t) {
-    final double sfBall = t.getSF().getPass() * Math.random();
-    final double sgBall = t.getSG().getPass() * Math.random();
-    final double pgBall = t.getPG().getPass() * Math.random();
+    final double sfBall = t.getPlayer(Position.SMALL_FORWARD).getRating(
+        RatingsType.PASSING)
+        * Math.random();
+    final double sgBall = t.getPlayer(Position.SHOOTING_GUARD).getRating(
+        RatingsType.PASSING)
+        * Math.random();
+    final double pgBall = t.getPlayer(Position.POINT_GUARD).getRating(
+        RatingsType.PASSING)
+        * Math.random();
     if (sfBall > sgBall && sfBall > pgBall) {
-      return t.getSF();
+      return t.getPlayer(Position.SMALL_FORWARD);
     } else if (sgBall > sfBall && sgBall > pgBall) {
-      return t.getSG();
+      return t.getPlayer(Position.SHOOTING_GUARD);
     } else {
-      return t.getPG();
+      return t.getPlayer(Position.POINT_GUARD);
     }
   }
 
@@ -76,30 +99,35 @@ public class Simulator {
       int[] matches) {
     // pass intelligently
     final int mismFactor = 18;
-    final double pgTen = offense.getPG().getUsage() + (float) matches[0]
-        / mismFactor;
-    final double sgTen = offense.getSG().getUsage() + (float) matches[1]
-        / mismFactor;
-    final double sfTen = offense.getSF().getUsage() + (float) matches[2]
-        / mismFactor;
-    final double pfTen = offense.getPF().getUsage() + (float) matches[3]
-        / mismFactor;
-    final double cTen = offense.getC().getUsage() + (float) matches[4]
-        / mismFactor;
+    final double pgTen = offense.getPlayer(Position.POINT_GUARD).getRating(
+        RatingsType.USAGE)
+        + (float) matches[0] / mismFactor;
+    final double sgTen = offense.getPlayer(Position.SHOOTING_GUARD).getRating(
+        RatingsType.USAGE)
+        + (float) matches[1] / mismFactor;
+    final double sfTen = offense.getPlayer(Position.SMALL_FORWARD).getRating(
+        RatingsType.USAGE)
+        + (float) matches[2] / mismFactor;
+    final double pfTen = offense.getPlayer(Position.POWER_FORWARD).getRating(
+        RatingsType.USAGE)
+        + (float) matches[3] / mismFactor;
+    final double cTen = offense.getPlayer(Position.CENTER).getRating(
+        RatingsType.USAGE)
+        + (float) matches[4] / mismFactor;
 
     final double totTen = pgTen + sgTen + sfTen + pfTen + cTen;
     final double whoPass = Math.random() * totTen;
 
     if (whoPass < pgTen) {
-      return offense.getPG();
+      return offense.getPlayer(Position.POINT_GUARD);
     } else if (whoPass < pgTen + sgTen) {
-      return offense.getSG();
+      return offense.getPlayer(Position.SHOOTING_GUARD);
     } else if (whoPass < pgTen + sgTen + sfTen) {
-      return offense.getSF();
+      return offense.getPlayer(Position.SMALL_FORWARD);
     } else if (whoPass < pgTen + sgTen + sfTen + pfTen) {
-      return offense.getPF();
+      return offense.getPlayer(Position.POWER_FORWARD);
     } else {
-      return offense.getC();
+      return offense.getPlayer(Position.CENTER);
     }
   }
 
@@ -112,14 +140,12 @@ public class Simulator {
     int ascore = 0; // score of away team
     boolean playing = true;
 
-    final int home_tot_outd = home.getPG().getOutD() + home.getSG().getOutD()
-        + home.getSF().getOutD() + home.getPF().getOutD()
-        + home.getC().getOutD();
-    final int away_tot_outd = away.getPG().getOutD() + away.getSG().getOutD()
-        + away.getSF().getOutD() + away.getPF().getOutD()
-        + away.getC().getOutD();
-    final double hspeed = 6 - (home_tot_outd - away_tot_outd) / 8;
-    final double aspeed = 6 - (away_tot_outd - home_tot_outd) / 8;
+    final int homeTotalOutsideDefense = home
+        .getTotalRating(RatingsType.OUTSIDE_DEFENSE);
+    final int awayTotalOutsideDefense = away
+        .getTotalRating(RatingsType.OUTSIDE_DEFENSE);
+    final double hspeed = 6 - (homeTotalOutsideDefense - awayTotalOutsideDefense) / 8;
+    final double aspeed = 6 - (awayTotalOutsideDefense - homeTotalOutsideDefense) / 8;
     // detect mismatches and add to total
     int[] matches_h = detectMismatch(home, away);
     for (int i = 0; i < 5; ++i) {
@@ -204,7 +230,7 @@ public class Simulator {
 
   public boolean potSteal(Player off, Player def) {
     if (Math.random() < 0.1) {
-      int stl = def.getStealRating() - 75;
+      int stl = def.getRating(RatingsType.STEALING) - 75;
       if (stl < 0) {
         stl = 0;
       }
@@ -221,18 +247,16 @@ public class Simulator {
 
   public int runPlay(Team offense, Team defense, int[] matches) {
 
-    final int off_tot_outd = offense.getPG().getOutD()
-        + offense.getSG().getOutD() + offense.getSF().getOutD()
-        + offense.getPF().getOutD() + offense.getC().getOutD();
-    final int def_tot_outd = defense.getPG().getOutD()
-        + defense.getSG().getOutD() + defense.getSF().getOutD()
-        + defense.getPF().getOutD() + defense.getC().getOutD();
-    final int fastbreak_possibility = off_tot_outd - def_tot_outd;
+    final int offTotalOutsideDefense = offense
+        .getTotalRating(RatingsType.OUTSIDE_DEFENSE);
+    final int defTotalOutsideDefense = defense
+        .getTotalRating(RatingsType.OUTSIDE_DEFENSE);
+    final int fastbreak_possibility = offTotalOutsideDefense - defTotalOutsideDefense;
 
     int totPasses = 0;
     final boolean offPoss = true;
     Player whoPoss = getBallCarrier(offense);
-    Player whoDef = defense.playersInTeam[whoPoss.getPosition() - 1];
+    Player whoDef = defense.playersInTeam[whoPoss.getPosition().getValue() - 1];
     Player assister = whoPoss;
 
     while (offPoss) {
@@ -241,27 +265,23 @@ public class Simulator {
         // pass the ball
         totPasses++;
         if (potSteal(whoPoss, whoDef)) {
-          // ball stolen
-          whoDef.addSteals();
+          whoDef.incrementCurrentGameStat(StatsType.STEALS);
           return 0;
         }
         // get receiver of pass
         assister = whoPoss;
         whoPoss = intelligentPass(whoPoss, offense, defense, matches);
-        whoDef = defense.playersInTeam[whoPoss.getPosition() - 1];
+        whoDef = defense.playersInTeam[whoPoss.getPosition().getValue() - 1];
       } else if (fastbreak_possibility * Math.random() > 60) {
         // punish all-bigs lineup, they give up fast break points
         LOG.info("FAST BREAK");
-        whoPoss.addPoints(2);
-        whoPoss.addFGA();
-        whoPoss.addFGM();
-        whoDef.addOFA();
-        whoDef.addOFM();
+        whoPoss.makeTwoPointShot(whoDef);
         if (assister == whoPoss) {
           return 2;
         } else {
-          if (Math.pow(assister.getPass() / 14, 2.4) * Math.random() > 20) {
-            assister.addAssist();
+          if (Math.pow(assister.getRating(RatingsType.PASSING) / 14, 2.4)
+              * Math.random() > 20) {
+            assister.incrementCurrentGameStat(StatsType.ASSISTS);
           }
           return 2;
         }
@@ -273,8 +293,9 @@ public class Simulator {
           if (assister == whoPoss) { // can't pass to yourself
             return points;
           } else {
-            if (Math.pow(assister.getPass() / 14, 2.4) * Math.random() > 20) {
-              assister.addAssist(); // give assist
+            if (Math.pow(assister.getRating(RatingsType.PASSING) / 14, 2.4)
+                * Math.random() > 20) {
+              assister.incrementCurrentGameStat(StatsType.ASSISTS);
             }
             return points;
           }
@@ -283,20 +304,22 @@ public class Simulator {
           final int[] rebAdvArr = new int[3];
           for (int r = 0; r < 3; ++r) {
             // calculate each players rebounding advantage
-            rebAdvArr[r] = offense.playersInTeam[r + 2].getReboundRating()
-                - defense.playersInTeam[r + 2].getReboundRating();
+            rebAdvArr[r] = offense.playersInTeam[r + 2]
+                .getRating(RatingsType.REBOUNDING)
+                - defense.playersInTeam[r + 2]
+                    .getRating(RatingsType.REBOUNDING);
           }
           final double rebAdv = 0.175 * (rebAdvArr[(int) (Math.random() * 3)] + rebAdvArr[(int) (Math
               .random() * 3)]);
           if (Math.random() * 100 + rebAdv > 25) {
             // defensive rebound
             final Player rebounder = findRebounder(defense);
-            rebounder.addRebounds();
+            rebounder.incrementCurrentGameStat(StatsType.REBOUNDS);
             return 0; // exit without scoring any points
           } else {
             // offensive rebound
             final Player rebounder = findRebounder(offense);
-            rebounder.addRebounds();
+            rebounder.incrementCurrentGameStat(StatsType.REBOUNDS);
             whoPoss = rebounder;
             totPasses = 2;
             // goes back into loop to try another play
@@ -311,54 +334,51 @@ public class Simulator {
     int assBonus = 0;
     if (assister != shooter) {
       // shooter gets bonus for having a good passer
-      assBonus = (int) ((float) (assister.getPass() - 75) / 5);
+      assBonus = (int) ((float) (assister.getRating(RatingsType.PASSING) - 75) / 5);
     }
 
     final double selShot = Math.random();
     // get intelligent tendencies based on mismatches
-    double intelOutT = shooter.getOutT();
-    double intelMidT = shooter.getMidT();
-    final int mismMid = shooter.getMidS()
-        - (int) ((float) defender.getOutD() / 2 + (float) defender.getIntD() / 2);
+    double intelOutT = transformRating(shooter.getRating(RatingsType.OUTSIDE_T));
+    double intelMidT = transformRating(shooter.getRating(RatingsType.MID_T));
+    final int mismMid = shooter.getRating(RatingsType.MID_SHOOTING)
+        - (int) ((float) defender.getRating(RatingsType.OUTSIDE_DEFENSE) / 2 + (float) defender
+            .getRating(RatingsType.INTERIOR_DEFENSE) / 2);
     if (Math.abs(mismMid) > 30) {
       intelMidT += (int) ((float) mismMid / 8);
     }
-    final int mismOut = shooter.getOutS() - defender.getOutD();
+    final int mismOut = shooter.getRating(RatingsType.OUTSIDE_SHOOTING)
+        - defender.getRating(RatingsType.OUTSIDE_DEFENSE);
     if (Math.abs(mismOut) > 30) {
       intelOutT += (int) ((float) mismOut / 8);
     }
-    if (selShot < intelOutT && intelOutT >= 0 && shooter.getOutS() > 50) {
+    if (selShot < intelOutT && intelOutT >= 0
+        && shooter.getRating(RatingsType.OUTSIDE_SHOOTING) > 50) {
       // 3 point shot
-      final double chance = 22 + (float) shooter.getOutS() / 3 + assBonus
-          - (float) defender.getOutD() / 6;
+      final double chance = 22
+          + (float) shooter.getRating(RatingsType.OUTSIDE_SHOOTING) / 3
+          + assBonus - (float) defender.getRating(RatingsType.OUTSIDE_DEFENSE)
+          / 6;
       if (chance > Math.random() * 100) {
-        // made the shot!
-        shooter.make3ptShot();
-        defender.addOFA();
-        defender.addOFM();
+        shooter.makeThreePointShot(defender);
         return 3;
       } else {
-        shooter.addFGA();
-        shooter.add3GA();
-        defender.addOFA();
+        shooter.missThreePointShot(defender);
         return 0;
       }
     } else if (selShot < intelMidT && intelMidT >= 0) {
       // mid range shot
-      final int defMidD = (int) (defender.getOutD() * 0.5 + defender.getIntD() * 0.5);
-      final double chance = 30 + (float) shooter.getOutS() / 3 + assBonus
-          - (float) defMidD / 7;
+      final int defMidD = (int) (defender
+          .getRating(RatingsType.OUTSIDE_DEFENSE) * 0.5 + defender
+          .getRating(RatingsType.INTERIOR_DEFENSE) * 0.5);
+      final double chance = 30
+          + (float) shooter.getRating(RatingsType.OUTSIDE_SHOOTING) / 3
+          + assBonus - (float) defMidD / 7;
       if (chance > Math.random() * 100) {
-        // made the shot!
-        shooter.addPoints(2);
-        shooter.addFGA();
-        shooter.addFGM();
-        defender.addOFA();
-        defender.addOFM();
+        shooter.makeTwoPointShot(defender);
         return 2;
       } else {
-        shooter.addFGA();
-        defender.addOFA();
+        shooter.missTwoPointShot(defender);
         return 0;
       }
     } else {
@@ -366,36 +386,38 @@ public class Simulator {
 
       // check for block
       if (Math.random() < 0.35) {
-        int blk = defender.getBlockRating() - 75;
+        int blk = defender.getRating(RatingsType.BLOCKING) - 75;
         if (blk < 0) {
           blk = 0;
         }
         if (Math.random() * Math.pow(blk, 0.75) > 5 || Math.random() < 0.02) {
-          // blocked!
-          shooter.addFGA();
-          defender.addOFA();
-          defender.addBlock();
+          defender.block(shooter);
           return 0;
         }
       }
 
-      final double chance = 35 + (float) shooter.getIntS() / 3 + assBonus
-          - (float) defender.getIntD() / 14 - (float) defense.getPF().getIntD()
-          / 25 - (float) defense.getC().getIntD() / 25;
+      final double chance = 35
+          + (float) shooter.getRating(RatingsType.INTERIOR_SHOOTING)
+          / 3
+          + assBonus
+          - (float) defender.getRating(RatingsType.INTERIOR_DEFENSE)
+          / 14
+          - (float) defense.getPlayer(Position.POWER_FORWARD).getRating(
+              RatingsType.INTERIOR_DEFENSE)
+          / 25
+          - (float) defense.getPlayer(Position.CENTER).getRating(
+              RatingsType.INTERIOR_DEFENSE) / 25;
       if (chance > Math.random() * 100) {
-        // made the shot!
-        shooter.addPoints(2);
-        shooter.addFGA();
-        shooter.addFGM();
-        defender.addOFA();
-        defender.addOFM();
+        shooter.makeTwoPointShot(defender);
         return 2;
       } else {
-        shooter.addFGA();
-        defender.addOFA();
+        shooter.missTwoPointShot(defender);
         return 0;
       }
     }
   }
 
+  private double transformRating(final int rating) {
+    return (double) rating / 1000;
+  }
 }

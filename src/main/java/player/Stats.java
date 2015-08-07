@@ -16,15 +16,15 @@ public class Stats {
   }
 
   public void add(final StatsType type, final int amount) {
-    stats[type.getValue()] += amount;
+    stats[type.ordinal()] += amount;
   }
 
   public int get(final StatsType type) {
-    return stats[type.getValue()];
+    return stats[type.ordinal()];
   }
 
   public void increment(final StatsType type) {
-    stats[type.getValue()]++;
+    stats[type.ordinal()]++;
   }
 
   public void reset() {

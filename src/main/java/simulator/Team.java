@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import player.Player;
+import player.Position;
+import player.RatingsType;
 import player.StatsType;
 
 import java.util.List;
@@ -44,82 +46,48 @@ public class Team {
     }
   }
 
-  public Team(String name, Player[] players) {
-    playersInTeam = players;
-    this.name = name;
-    wins = 0;
-    losses = 0;
-    games = 0;
-    startersIn = new int[5];
-    benchIn = new int[5];
-    for (int i = 0; i < 5; ++i) {
-      startersIn[i] = 1;
-      benchIn[i] = 0;
-    }
-  }
-
   public void addPlayer(Player player) {
     // add player (used by AI)
-    if (playersInTeam[player.ratings[0] - 1] == null) {
+    if (playersInTeam[player.getPosition().getValue() - 1] == null) {
       // no starter yet
-      playersInTeam[player.ratings[0] - 1] = player;
+      playersInTeam[player.getPosition().getValue() - 1] = player;
     } else {
       // put in bench
-      playersInTeam[player.ratings[0] - 1 + 5] = player;
+      playersInTeam[player.getPosition().getValue() - 1 + 5] = player;
     }
 
   }
 
   public double get3GAPG() {
-    double res = 0.0;
-    for (int p = 0; p < 10; p++) {
-      res += playersInTeam[p].get3GAPG();
-    }
-    return (double) ((int) (res * 10)) / 10;
+    return getTeamStatsPerGame(StatsType.THREES_GA);
   }
 
   public double get3GP() {
-    double res = 0.0;
-    for (int p = 0; p < 10; p++) {
-      res += playersInTeam[p].get3GP()
-          * (playersInTeam[p].get3GAPG() / get3GAPG());
+    double res = 0;
+    for (final Player player : playersInTeam) {
+      res += player.get3GP()
+          * (player.getPerGameStatsOfType(StatsType.THREES_GA) / get3GAPG());
     }
     return (double) ((int) (res * 10)) / 10;
   }
 
   public double getAPG() {
-    double res = 0.0;
-    for (int p = 0; p < 10; p++) {
-      res += playersInTeam[p].getAPG();
-    }
-    return (double) ((int) (res * 10)) / 10;
+    return getTeamStatsPerGame(StatsType.ASSISTS);
   }
 
   public double getBPG() {
-    double res = 0.0;
-    for (int p = 0; p < 10; p++) {
-      res += playersInTeam[p].getBPG();
-    }
-    return (double) ((int) (res * 10)) / 10;
-  }
-
-  public Player getC() {
-    return playersInTeam[4];
+    return getTeamStatsPerGame(StatsType.BLOCKS);
   }
 
   public double getFGAPG() {
-    double res = 0.0;
-    for (int p = 0; p < 10; p++) {
-      res += playersInTeam[p].getFGAPG();
-    }
-    return (double) ((int) (res * 10)) / 10;
+    return getTeamStatsPerGame(StatsType.FGA);
   }
 
   public double getFGP() {
     double res = 0.0;
-    for (int p = 0; p < 10; p++) {
-      res += playersInTeam[p].getFGP()
-          * (playersInTeam[p].getFGAPG() / getFGAPG());
+    for (final Player player : playersInTeam) {
+      res += player.getFGP()
+          * (player.getPerGameStatsOfType(StatsType.FGA) / getFGAPG());
     }
     return (double) ((int) (res * 10)) / 10;
   }
@@ -131,9 +99,9 @@ public class Team {
   public double getOFP() {
     int totalOFA = 0;
     int totalOFM = 0;
-    for (int i = 0; i < 10; i++) {
-      totalOFA += playersInTeam[i].getTotalStatsOfType(StatsType.OFA);
-      totalOFM += playersInTeam[i].getTotalStatsOfType(StatsType.OFM);
+    for (final Player player : playersInTeam) {
+      totalOFA += player.getTotalStatsOfType(StatsType.OFA);
+      totalOFM += player.getTotalStatsOfType(StatsType.OFM);
     }
     LOG.info("{} {}/{}", name, totalOFM, totalOFA);
     return (double) ((int) ((float) totalOFM / totalOFA * 1000)) / 10;
@@ -148,12 +116,8 @@ public class Team {
     }
   }
 
-  public Player getPF() {
-    return playersInTeam[3];
-  }
-
-  public Player getPG() {
-    return playersInTeam[0];
+  public Player getPlayer(final Position position) {
+    return playersInTeam[position.getValue() - 1];
   }
 
   public double getPointDiff() {
@@ -164,34 +128,34 @@ public class Team {
   // getters for team stats per game
   public double getPPG() {
     double res = 0.0;
-    for (int p = 0; p < 10; p++) {
-      res += playersInTeam[p].getPPG();
+    for (final Player player : playersInTeam) {
+      res += player.getPPG();
     }
     return res;
   }
 
   public double getRPG() {
-    double res = 0.0;
-    for (int p = 0; p < 10; p++) {
-      res += playersInTeam[p].getRPG();
-    }
-    return (double) ((int) (res * 10)) / 10;
-  }
-
-  public Player getSF() {
-    return playersInTeam[2];
-  }
-
-  public Player getSG() {
-    return playersInTeam[1];
+    return getTeamStatsPerGame(StatsType.REBOUNDS);
   }
 
   public double getSPG() {
-    double res = 0.0;
-    for (int p = 0; p < 10; p++) {
-      res += playersInTeam[p].getSPG();
+    return getTeamStatsPerGame(StatsType.STEALS);
+  }
+
+  private double getTeamStatsPerGame(StatsType type) {
+    double res = 0;
+    for (final Player player : playersInTeam) {
+      res += player.getPerGameStatsOfType(type);
     }
     return (double) ((int) (res * 10)) / 10;
+  }
+
+  public int getTotalRating(RatingsType type) {
+    int totalRating = 0;
+    for (final Position position : Position.values()) {
+      totalRating += getPlayer(position).getRating(type);
+    }
+    return totalRating;
   }
 
   public int getWins82() {
@@ -205,7 +169,7 @@ public class Team {
           && playersInTeam[2] != null && playersInTeam[3] != null
           && playersInTeam[4] != null) {
         // starters all selected, need bench
-        if (playersInTeam[players.get(p).ratings[0] - 1 + 5] == null) {
+        if (playersInTeam[players.get(p).getPosition().getValue() - 1 + 5] == null) {
           // dont have bench guy in this position yet
           final Player selectedPlayer = players.get(p);
           addPlayer(selectedPlayer);
@@ -214,7 +178,7 @@ public class Team {
           return;
         }
       } else {
-        if (playersInTeam[players.get(p).ratings[0] - 1] == null) {
+        if (playersInTeam[players.get(p).getPosition().getValue() - 1] == null) {
           // dont have starter in this position yet
           final Player selectedPlayer = players.get(p);
           addPlayer(selectedPlayer);
@@ -231,9 +195,11 @@ public class Team {
     // sub players based on game time
     time = time / 60;
     // PG
-    if (startersIn[0] == 1 && benchIn[0] == 0
-        && time >= (double) getPG().getPlayingTime() / 2
-        && time < 47 - (double) getPG().getPlayingTime() / 2) {
+    if (startersIn[0] == 1
+        && benchIn[0] == 0
+        && time >= (double) getPlayer(Position.POINT_GUARD).getPlayingTime() / 2
+        && time < 47 - (double) getPlayer(Position.POINT_GUARD)
+            .getPlayingTime() / 2) {
       // sub out starting PG
       final Player tmp = playersInTeam[0];
       playersInTeam[0] = playersInTeam[5];
@@ -242,10 +208,12 @@ public class Team {
       benchIn[0] = 1;
       if ("PLAYER TEAM".equals(name) && games == 0) {
         LOG.info("Subbed out {} for {} at time {}", playersInTeam[5].name,
-            getPG().name, time);
+            getPlayer(Position.POINT_GUARD).name, time);
       }
-    } else if (startersIn[0] == 0 && benchIn[0] == 1
-        && time >= 48 - (double) getPG().getPlayingTime() / 2) {
+    } else if (startersIn[0] == 0
+        && benchIn[0] == 1
+        && time >= 48 - (double) getPlayer(Position.POINT_GUARD)
+            .getPlayingTime() / 2) {
       // sub in starting PG
       final Player tmp = playersInTeam[0];
       playersInTeam[0] = playersInTeam[5];
@@ -254,21 +222,25 @@ public class Team {
       benchIn[0] = 0;
       if ("PLAYER TEAM".equals(name) && games == 0) {
         LOG.info("Subbed out {} for {} at time {}", playersInTeam[5].name,
-            getPG().name, time);
+            getPlayer(Position.POINT_GUARD).name, time);
       }
     }
     // SG
-    if (startersIn[1] == 1 && benchIn[1] == 0
-        && time >= (double) getSG().getPlayingTime() / 2
-        && time < 47 - (double) getSG().getPlayingTime() / 2) {
+    if (startersIn[1] == 1
+        && benchIn[1] == 0
+        && time >= (double) getPlayer(Position.SHOOTING_GUARD).getPlayingTime() / 2
+        && time < 47 - (double) getPlayer(Position.SHOOTING_GUARD)
+        .getPlayingTime() / 2) {
       // sub out starting SG
       final Player tmp = playersInTeam[1];
       playersInTeam[1] = playersInTeam[6];
       playersInTeam[6] = tmp;
       startersIn[1] = 0;
       benchIn[1] = 1;
-    } else if (startersIn[1] == 0 && benchIn[1] == 1
-        && time >= 48 - (double) getSG().getPlayingTime() / 2) {
+    } else if (startersIn[1] == 0
+        && benchIn[1] == 1
+        && time >= 48 - (double) getPlayer(Position.SHOOTING_GUARD)
+        .getPlayingTime() / 2) {
       // sub in starting SG
       final Player tmp = playersInTeam[1];
       playersInTeam[1] = playersInTeam[6];
@@ -277,17 +249,21 @@ public class Team {
       benchIn[1] = 0;
     }
     // SF
-    if (startersIn[2] == 1 && benchIn[2] == 0
-        && time >= (double) getSF().getPlayingTime() / 2
-        && time < 47 - (double) getSF().getPlayingTime() / 2) {
+    if (startersIn[2] == 1
+        && benchIn[2] == 0
+        && time >= (double) getPlayer(Position.SMALL_FORWARD).getPlayingTime() / 2
+        && time < 47 - (double) getPlayer(Position.SMALL_FORWARD)
+            .getPlayingTime() / 2) {
       // sub out starting SF
       final Player tmp = playersInTeam[2];
       playersInTeam[2] = playersInTeam[7];
       playersInTeam[7] = tmp;
       startersIn[2] = 0;
       benchIn[2] = 1;
-    } else if (startersIn[2] == 0 && benchIn[2] == 1
-        && time >= 48 - (double) getSF().getPlayingTime() / 2) {
+    } else if (startersIn[2] == 0
+        && benchIn[2] == 1
+        && time >= 48 - (double) getPlayer(Position.SMALL_FORWARD)
+            .getPlayingTime() / 2) {
       // sub in starting SF
       final Player tmp = playersInTeam[2];
       playersInTeam[2] = playersInTeam[7];
@@ -296,17 +272,21 @@ public class Team {
       benchIn[2] = 0;
     }
     // PF
-    if (startersIn[3] == 1 && benchIn[3] == 0
-        && time >= (double) getPF().getPlayingTime() / 2
-        && time < 47 - (double) getPF().getPlayingTime() / 2) {
+    if (startersIn[3] == 1
+        && benchIn[3] == 0
+        && time >= (double) getPlayer(Position.POWER_FORWARD).getPlayingTime() / 2
+        && time < 47 - (double) getPlayer(Position.POWER_FORWARD)
+        .getPlayingTime() / 2) {
       // sub out starting PF
       final Player tmp = playersInTeam[3];
       playersInTeam[3] = playersInTeam[8];
       playersInTeam[8] = tmp;
       startersIn[3] = 0;
       benchIn[3] = 1;
-    } else if (startersIn[3] == 0 && benchIn[3] == 1
-        && time >= 48 - (double) getPF().getPlayingTime() / 2) {
+    } else if (startersIn[3] == 0
+        && benchIn[3] == 1
+        && time >= 48 - (double) getPlayer(Position.POWER_FORWARD)
+        .getPlayingTime() / 2) {
       // sub in starting PF
       final Player tmp = playersInTeam[3];
       playersInTeam[3] = playersInTeam[8];
@@ -316,16 +296,18 @@ public class Team {
     }
     // C
     if (startersIn[4] == 1 && benchIn[4] == 0
-        && time >= (double) getC().getPlayingTime() / 2
-        && time < 47 - (double) getC().getPlayingTime() / 2) {
+        && time >= (double) getPlayer(Position.CENTER).getPlayingTime() / 2
+        && time < 47 - (double) getPlayer(Position.CENTER).getPlayingTime() / 2) {
       // sub out starting C
       final Player tmp = playersInTeam[4];
       playersInTeam[4] = playersInTeam[9];
       playersInTeam[9] = tmp;
       startersIn[4] = 0;
       benchIn[4] = 1;
-    } else if (startersIn[4] == 0 && benchIn[4] == 1
-        && time >= 48 - (double) getPF().getPlayingTime() / 2) {
+    } else if (startersIn[4] == 0
+        && benchIn[4] == 1
+        && time >= 48 - (double) getPlayer(Position.POWER_FORWARD)
+        .getPlayingTime() / 2) {
       // sub in starting C
       final Player tmp = playersInTeam[4];
       playersInTeam[4] = playersInTeam[9];
