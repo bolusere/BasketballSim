@@ -8,8 +8,8 @@ package simulator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import players.Player;
-import players.StatsTypes;
+import player.Player;
+import player.StatsType;
 
 import java.util.List;
 
@@ -132,8 +132,8 @@ public class Team {
     int totalOFA = 0;
     int totalOFM = 0;
     for (int i = 0; i < 10; i++) {
-      totalOFA += playersInTeam[i].getTotalStatsOfType(StatsTypes.OFA);
-      totalOFM += playersInTeam[i].getTotalStatsOfType(StatsTypes.OFM);
+      totalOFA += playersInTeam[i].getTotalStatsOfType(StatsType.OFA);
+      totalOFM += playersInTeam[i].getTotalStatsOfType(StatsType.OFM);
     }
     LOG.info("{} {}/{}", name, totalOFM, totalOFA);
     return (double) ((int) ((float) totalOFM / totalOFA * 1000)) / 10;

@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package players;
+package player;
 
 /**
  *
@@ -32,27 +32,27 @@ public class Player {
   }
 
   public void add3GA() {
-    statsPerGame.increment(StatsTypes.THREES_GA);
+    statsPerGame.increment(StatsType.THREES_GA);
   }
 
   public void add3GM() {
-    statsPerGame.increment(StatsTypes.THREES_GM);
+    statsPerGame.increment(StatsType.THREES_GM);
   }
 
   public void addAssist() {
-    statsPerGame.increment(StatsTypes.ASSISTS);
+    statsPerGame.increment(StatsType.ASSISTS);
   }
 
   public void addBlock() {
-    statsPerGame.increment(StatsTypes.BLOCKS);
+    statsPerGame.increment(StatsType.BLOCKS);
   }
 
   public void addFGA() {
-    statsPerGame.increment(StatsTypes.FGA);
+    statsPerGame.increment(StatsType.FGA);
   }
 
   public void addFGM() {
-    statsPerGame.increment(StatsTypes.FGM);
+    statsPerGame.increment(StatsType.FGM);
   }
 
   public void addGameStatsToTotal() {
@@ -62,48 +62,48 @@ public class Player {
   }
 
   public void addMismatch(final int amountMismatch) {
-    statsTotal.add(StatsTypes.MSM, amountMismatch);
+    statsTotal.add(StatsType.MSM, amountMismatch);
   }
 
   public void addOFA() {
-    statsPerGame.increment(StatsTypes.OFA);
+    statsPerGame.increment(StatsType.OFA);
   }
 
   public void addOFM() {
-    statsPerGame.increment(StatsTypes.OFM);
+    statsPerGame.increment(StatsType.OFM);
   }
 
   public void addPoints(int points) {
-    statsPerGame.add(StatsTypes.POINTS, points);
+    statsPerGame.add(StatsType.POINTS, points);
   }
 
   public void addRebounds() {
-    statsPerGame.increment(StatsTypes.REBOUNDS);
+    statsPerGame.increment(StatsType.REBOUNDS);
   }
 
   public void addSteals() {
-    statsPerGame.increment(StatsTypes.STEALS);
+    statsPerGame.increment(StatsType.STEALS);
   }
 
-  private double convertTotalToPerGame(StatsTypes type) {
+  private double convertTotalToPerGame(StatsType type) {
     return (double) ((int) ((double) statsTotal.get(type) / gamesPlayed * 10)) / 10;
   }
 
   public double get3GAPG() {
-    return convertTotalToPerGame(StatsTypes.THREES_GA);
+    return convertTotalToPerGame(StatsType.THREES_GA);
   }
 
   public double get3GP() {
-    if (statsTotal.get(StatsTypes.THREES_GA) > 0) {
-      return (double) ((int) ((double) statsTotal.get(StatsTypes.THREES_GM)
-          / statsTotal.get(StatsTypes.THREES_GA) * 1000)) / 10;
+    if (statsTotal.get(StatsType.THREES_GA) > 0) {
+      return (double) ((int) ((double) statsTotal.get(StatsType.THREES_GM)
+          / statsTotal.get(StatsType.THREES_GA) * 1000)) / 10;
     } else {
       return 0;
     }
   }
 
   public double getAPG() {
-    return convertTotalToPerGame(StatsTypes.ASSISTS);
+    return convertTotalToPerGame(StatsType.ASSISTS);
   }
 
   public int getBlockRating() {
@@ -111,16 +111,16 @@ public class Player {
   }
 
   public double getBPG() {
-    return convertTotalToPerGame(StatsTypes.BLOCKS);
+    return convertTotalToPerGame(StatsType.BLOCKS);
   }
 
   public double getFGAPG() {
-    return convertTotalToPerGame(StatsTypes.FGA);
+    return convertTotalToPerGame(StatsType.FGA);
   }
 
   public double getFGP() {
-    return (double) ((int) ((double) statsTotal.get(StatsTypes.FGM)
-        / statsTotal.get(StatsTypes.FGA) * 1000)) / 10;
+    return (double) ((int) ((double) statsTotal.get(StatsType.FGM)
+        / statsTotal.get(StatsType.FGA) * 1000)) / 10;
   }
 
   public int getHandRating() {
@@ -148,12 +148,12 @@ public class Player {
   }
 
   public int getMSM() {
-    return (int) ((double) statsTotal.get(StatsTypes.MSM) / (gamesPlayed));
+    return (int) ((double) statsTotal.get(StatsType.MSM) / (gamesPlayed));
   }
 
   public double getOFP() {
-    return (double) ((int) ((double) statsTotal.get(StatsTypes.OFM)
-        / statsTotal.get(StatsTypes.OFA) * 1000)) / 10;
+    return (double) ((int) ((double) statsTotal.get(StatsType.OFM)
+        / statsTotal.get(StatsType.OFA) * 1000)) / 10;
   }
 
   public int getOutD() {
@@ -176,7 +176,7 @@ public class Player {
     return ratings[5];
   }
 
-  public int getPerGameStatsOfType(StatsTypes type) {
+  public int getPerGameStatsOfType(StatsType type) {
     return statsPerGame.get(type);
   }
 
@@ -190,7 +190,7 @@ public class Player {
   }
 
   public double getPPG() {
-    return convertTotalToPerGame(StatsTypes.POINTS);
+    return convertTotalToPerGame(StatsType.POINTS);
   }
 
   public int getReboundRating() {
@@ -198,18 +198,18 @@ public class Player {
   }
 
   public double getRPG() {
-    return convertTotalToPerGame(StatsTypes.REBOUNDS);
+    return convertTotalToPerGame(StatsType.REBOUNDS);
   }
 
   public double getSPG() {
-    return convertTotalToPerGame(StatsTypes.STEALS);
+    return convertTotalToPerGame(StatsType.STEALS);
   }
 
   public int getStealRating() {
     return ratings[7];
   }
 
-  public int getTotalStatsOfType(StatsTypes type) {
+  public int getTotalStatsOfType(StatsType type) {
     return statsTotal.get(type);
   }
 

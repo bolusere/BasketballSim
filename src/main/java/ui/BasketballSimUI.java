@@ -8,8 +8,8 @@ package ui;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import players.Player;
-import players.PlayerGen;
+import player.Player;
+import player.PlayerGen;
 import simulator.Simulator;
 import simulator.Team;
 

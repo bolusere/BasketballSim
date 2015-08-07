@@ -1,4 +1,4 @@
-package players;
+package player;
 
 import java.util.Arrays;
 
@@ -6,7 +6,7 @@ public class Stats {
   private final int[] stats;
 
   public Stats() {
-    stats = new int[StatsTypes.values().length];
+    stats = new int[StatsType.values().length];
   }
 
   public void add(final Stats otherStats) {
@@ -15,15 +15,15 @@ public class Stats {
     }
   }
 
-  public void add(final StatsTypes type, final int amount) {
+  public void add(final StatsType type, final int amount) {
     stats[type.getValue()] += amount;
   }
 
-  public int get(final StatsTypes type) {
+  public int get(final StatsType type) {
     return stats[type.getValue()];
   }
 
-  public void increment(final StatsTypes type) {
+  public void increment(final StatsType type) {
     stats[type.getValue()]++;
   }
 

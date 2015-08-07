@@ -7,6 +7,9 @@ import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
 
+import player.Stats;
+import player.StatsType;
+
 public class StatsTest {
   private Stats stats;
 
@@ -18,13 +21,13 @@ public class StatsTest {
   @Before
   public void initializeStats() {
     stats = new Stats();
-    stats.increment(StatsTypes.THREES_GA);
+    stats.increment(StatsType.THREES_GA);
   }
 
   @Test
   public void resetClearsFields() {
     stats.reset();
-    for (final StatsTypes type : StatsTypes.values()) {
+    for (final StatsType type : StatsType.values()) {
       assertThat("A field was not zero after reset", stats.get(type), is(0));
     }
   }
