@@ -14,8 +14,15 @@ public class StatsTest {
   private Stats stats;
 
   @Test
-  public void ayy() {
-    assertThat(stats.toString(), is(equalTo("ayy")));
+  public void addCombinesValues() {
+    final Stats statsToAdd = new Stats(stats);
+    stats.add(statsToAdd);
+
+    final Stats expectedStats = new Stats();
+    expectedStats.add(StatsType.THREES_GA, 2);
+
+    assertThat("Stats failed to add as expected", stats,
+        is(equalTo(expectedStats)));
   }
 
   @Before
